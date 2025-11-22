@@ -119,6 +119,7 @@ type Metric struct {
 	Statistics []string      `yaml:"statistics"`
 	Period     time.Duration `yaml:"period"`
 	Length     time.Duration `yaml:"length"`
+	Delay      time.Duration `yaml:"delay,omitempty"`
 	NilToZero  *bool         `yaml:"nil_to_zero,omitempty"`
 }
 
@@ -233,24 +234,35 @@ func toYACEConfig(c *Config) (yaceModel.JobsConfig, bool, error) {
 	}
 	PatchYACEDefaults(&modelConf)
 
+	// YACE's Validate method resets metric-level Delay to 0, as YACE currently ignores metric-level
+	// delay and only respects discovery-level delay (see YACE pkg/config/config.go:validateMetric).
+	// This behavior was confirmed through testing: without this restore, configured Delay values
+	// are lost. We restore them here to preserve user intent while maintaining compatibility
+	// with YACE's current implementation. Note: YACE logs warnings for non-zero metric delays.
+	for i, job := range c.Discovery.Jobs {
+		for j, metric := range job.Metrics {
+			if len(modelConf.DiscoveryJobs) > i && len(modelConf.DiscoveryJobs[i].Metrics) > j {
+				modelConf.DiscoveryJobs[i].Metrics[j].Delay = int64(metric.Delay.Seconds())
+			}
+		}
+	}
+	for i, job := range c.Static {
+		for j, metric := range job.Metrics {
+			if len(modelConf.StaticJobs) > i && len(modelConf.StaticJobs[i].Metrics) > j {
+				modelConf.StaticJobs[i].Metrics[j].Delay = int64(metric.Delay.Seconds())
+			}
+		}
+	}
+	// CustomNamespace is not in the static integration
+
 	return modelConf, fipsEnabled, nil
 }
 
 // PatchYACEDefaults overrides some default values YACE applies after validation.
+// Note: Delay is now handled in toYACEMetrics and should not be overridden here.
 func PatchYACEDefaults(yc *yaceModel.JobsConfig) {
-	// YACE doesn't allow during validation a zero-delay in each metrics scrape. Override this behaviour since it's taken
-	// into account by the rounding period.
-	// https://github.com/prometheus-community/yet-another-cloudwatch-exporter/blob/7e5949124bb5f26353eeff298724a5897de2a2a4/pkg/config/config.go#L320
-	for _, job := range yc.DiscoveryJobs {
-		for _, metric := range job.Metrics {
-			metric.Delay = 0
-		}
-	}
-	for _, staticConf := range yc.StaticJobs {
-		for _, metric := range staticConf.Metrics {
-			metric.Delay = 0
-		}
-	}
+	// YACE doesn't allow during validation a zero-delay in each metrics scrape, but since we now allow configuring Delay,
+	// we no longer override it here. The rounding period still handles alignment.
 }
 
 func toYACEStaticJob(job StaticJob) *yaceConf.Static {
@@ -328,9 +340,8 @@ func toYACEMetrics(metrics []Metric, jobNilToZero *bool) []*yaceConf.Metric {
 			Period: periodSeconds,
 			Length: lengthSeconds,
 
-			// Delay moves back the time window for whom CloudWatch is requested data. Since we are already adjusting
-			// this with RoundingPeriod (see toYACEDiscoveryJob), we should omit this setting.
-			Delay: 0,
+			// Delay moves back the time window for whom CloudWatch is requested data.
+			Delay: int64(metric.Delay.Seconds()),
 
 			NilToZero:              nilToZero,
 			AddCloudwatchTimestamp: &addCloudwatchTimestamp,

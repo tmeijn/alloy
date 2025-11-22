@@ -186,6 +186,30 @@ static:
           - Average
 `
 
+// for testing delay
+const configString4 = `
+sts_region: us-east-2
+static:
+  - regions:
+      - us-east-2
+    name: delay_test
+    namespace: AWS/EC2
+    dimensions:
+      - name: InstanceId
+        value: i-test
+    metrics:
+      - name: CPUUtilization
+        period: 1m
+        delay: "60s"
+        statistics:
+          - Average
+      - name: NetworkIn
+        period: 5m
+        delay: "5m"
+        statistics:
+          - Sum
+`
+
 var (
 	falsePtr = false
 	truePtr  = true
@@ -353,6 +377,42 @@ var expectedConfig3 = model.JobsConfig{
 	CustomNamespaceJobs: []model.CustomNamespaceJob(nil),
 }
 
+var expectedConfig4 = model.JobsConfig{
+	StsRegion: "us-east-2",
+	StaticJobs: []model.StaticJob{{
+		Name:       "delay_test",
+		Regions:    []string{"us-east-2"},
+		Roles:      []model.Role{{RoleArn: "", ExternalID: ""}},
+		Namespace:  "AWS/EC2",
+		CustomTags: []model.Tag{},
+		Dimensions: []model.Dimension{
+			{Name: "InstanceId", Value: "i-test"},
+		},
+		Metrics: []*model.MetricConfig{
+			{
+				Name:                   "CPUUtilization",
+				Statistics:             []string{"Average"},
+				Period:                 60,
+				Length:                 60,
+				Delay:                  60,
+				NilToZero:              true,
+				AddCloudwatchTimestamp: false,
+			},
+			{
+				Name:                   "NetworkIn",
+				Statistics:             []string{"Sum"},
+				Period:                 300,
+				Length:                 300,
+				Delay:                  300,
+				NilToZero:              true,
+				AddCloudwatchTimestamp: false,
+			},
+		},
+	}},
+	DiscoveryJobs:       []model.DiscoveryJob(nil),
+	CustomNamespaceJobs: []model.CustomNamespaceJob(nil),
+}
+
 func TestTranslateConfigToYACEConfig(t *testing.T) {
 	c := Config{}
 	err := yaml.Unmarshal([]byte(configString), &c)
@@ -389,6 +449,21 @@ func TestTranslateNilToZeroConfigToYACEConfig(t *testing.T) {
 	require.NoError(t, err, "failed to translate to YACE configuration")
 
 	require.EqualValues(t, expectedConfig3.DiscoveryJobs, yaceConf.DiscoveryJobs)
+	require.EqualValues(t, truePtr, fipsEnabled)
+}
+
+func TestTranslateDelayConfigToYACEConfig(t *testing.T) {
+	c := Config{}
+	err := yaml.Unmarshal([]byte(configString4), &c)
+	require.NoError(t, err, "failed to unmarshal config")
+
+	logger, err := logging.New(io.Discard, logging.DefaultOptions)
+	require.NoError(t, err)
+
+	yaceConf, fipsEnabled, err := ToYACEConfig(&c, logger)
+	require.NoError(t, err, "failed to translate to YACE configuration")
+
+	require.EqualValues(t, expectedConfig4, yaceConf)
 	require.EqualValues(t, truePtr, fipsEnabled)
 }
 

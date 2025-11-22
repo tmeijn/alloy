@@ -113,6 +113,7 @@ type Metric struct {
 	Statistics             []string      `alloy:"statistics,attr"`
 	Period                 time.Duration `alloy:"period,attr"`
 	Length                 time.Duration `alloy:"length,attr,optional"`
+	Delay                  time.Duration `alloy:"delay,attr,optional"`
 	NilToZero              *bool         `alloy:"nil_to_zero,attr,optional"`
 	AddCloudwatchTimestamp *bool         `alloy:"add_cloudwatch_timestamp,attr,optional"`
 }
@@ -217,6 +218,33 @@ func convertToYACE(a Arguments) (yaceModel.JobsConfig, error) {
 	}
 	cloudwatch_exporter.PatchYACEDefaults(&modelConf)
 
+	// YACE's Validate method resets metric-level Delay to 0, as YACE currently ignores metric-level
+	// delay and only respects discovery-level delay (see YACE pkg/config/config.go:validateMetric).
+	// This behavior was confirmed through testing: without this restore, configured Delay values
+	// are lost. We restore them here to preserve user intent while maintaining compatibility
+	// with YACE's current implementation. Note: YACE logs warnings for non-zero metric delays.
+	for i, job := range a.Discovery {
+		for j, metric := range job.Metrics {
+			if len(modelConf.DiscoveryJobs) > i && len(modelConf.DiscoveryJobs[i].Metrics) > j {
+				modelConf.DiscoveryJobs[i].Metrics[j].Delay = int64(metric.Delay.Seconds())
+			}
+		}
+	}
+	for i, job := range a.Static {
+		for j, metric := range job.Metrics {
+			if len(modelConf.StaticJobs) > i && len(modelConf.StaticJobs[i].Metrics) > j {
+				modelConf.StaticJobs[i].Metrics[j].Delay = int64(metric.Delay.Seconds())
+			}
+		}
+	}
+	for i, job := range a.CustomNamespace {
+		for j, metric := range job.Metrics {
+			if len(modelConf.CustomNamespaceJobs) > i && len(modelConf.CustomNamespaceJobs[i].Metrics) > j {
+				modelConf.CustomNamespaceJobs[i].Metrics[j].Delay = int64(metric.Delay.Seconds())
+			}
+		}
+	}
+
 	return modelConf, nil
 }
 
@@ -266,9 +294,8 @@ func toYACEMetrics(ms []Metric, jobNilToZero *bool) []*yaceConf.Metric {
 			Period: periodSeconds,
 			Length: lengthSeconds,
 
-			// Delay moves back the time window for whom CloudWatch is requested data. Since we are already adjusting
-			// this with RoundingPeriod (see toYACEDiscoveryJob), we should omit this setting.
-			Delay: 0,
+			// Delay moves back the time window for whom CloudWatch is requested data.
+			Delay: int64(m.Delay.Seconds()),
 
 			NilToZero:              nilToZero,
 			AddCloudwatchTimestamp: m.AddCloudwatchTimestamp,

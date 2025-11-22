@@ -222,6 +222,29 @@ custom_namespace "customEC2Metrics" {
 }
 `
 
+const delayConfig = `
+sts_region = "us-east-2"
+static "test_delay" {
+	regions = ["us-east-2"]
+	namespace = "AWS/EC2"
+	dimensions = {
+		"InstanceId" = "i-test",
+	}
+	metric {
+		name = "CPUUtilization"
+		statistics = ["Average"]
+		period = "1m"
+		delay = "60s"
+	}
+	metric {
+		name = "NetworkIn"
+		statistics = ["Sum"]
+		period = "5m"
+		delay = "5m"
+	}
+}
+`
+
 func TestCloudwatchComponentConfig(t *testing.T) {
 	type testcase struct {
 		raw                 string
@@ -556,6 +579,47 @@ func TestCloudwatchComponentConfig(t *testing.T) {
 							},
 						},
 						RoundingPeriod: nil,
+					},
+				},
+			},
+		},
+		"delay config": {
+			raw: delayConfig,
+			expected: yaceModel.JobsConfig{
+				StsRegion: "us-east-2",
+				StaticJobs: []yaceModel.StaticJob{
+					{
+						Name: "test_delay",
+						// assert an empty role is used as default. IMPORTANT since this
+						// is what YACE looks for delegating to the environment role
+						Roles:      []yaceModel.Role{{}},
+						Regions:    []string{"us-east-2"},
+						Namespace:  "AWS/EC2",
+						CustomTags: []yaceModel.Tag{},
+						Dimensions: []yaceModel.Dimension{
+							{
+								Name:  "InstanceId",
+								Value: "i-test",
+							},
+						},
+						Metrics: []*yaceModel.MetricConfig{
+							{
+								Name:       "CPUUtilization",
+								Statistics: []string{"Average"},
+								Period:     60,
+								Length:     60,
+								Delay:      60,
+								NilToZero:  defaultNilToZero,
+							},
+							{
+								Name:       "NetworkIn",
+								Statistics: []string{"Sum"},
+								Period:     300,
+								Length:     300,
+								Delay:      300,
+								NilToZero:  defaultNilToZero,
+							},
+						},
 					},
 				},
 			},
