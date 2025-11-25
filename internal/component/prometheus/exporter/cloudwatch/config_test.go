@@ -168,6 +168,7 @@ static "super_ec2_instance_id" {
 }
 `
 
+
 const discoveryJobNilToZeroConfig = `
 sts_region = "us-east-2"
 debug = true
@@ -218,6 +219,65 @@ custom_namespace "customEC2Metrics" {
 		// setting nil_to_zero on the metric level
 		nil_to_zero = true
 		add_cloudwatch_timestamp = false
+    }
+}
+`
+
+const discoveryJobDelayConfig = `
+sts_region = "us-east-2"
+debug = true
+discovery {
+	type = "AWS/EC2"
+	regions = ["us-east-2"]
+	delay = "2m"
+	metric {
+		name = "CPUUtilization"
+		statistics = ["Average"]
+		period = "5m"
+	}
+	metric {
+		name = "NetworkIn"
+		statistics = ["Sum"]
+		period = "5m"
+	}
+}
+`
+
+const staticJobDelayConfig = `
+sts_region = "us-east-2"
+debug = true
+static "test_instance" {
+	regions = ["us-east-2"]
+	namespace = "AWS/EC2"
+	dimensions = {
+		"InstanceId" = "i-test",
+	}
+	metric {
+		name = "CPUUtilization"
+		statistics = ["Average"]
+		period = "5m"
+	}
+}
+`
+
+const customNamespaceDelayConfig = `
+sts_region = "eu-west-1"
+
+custom_namespace "testMetrics" {
+    namespace = "TestMetrics"
+    regions   = ["us-east-1"]
+	delay = "30s"
+
+    metric {
+        name       = "metric1"
+        statistics = ["Average"]
+        period     = "1m"
+    }
+
+    metric {
+        name       = "metric2"
+        statistics = ["Sum"]
+        period     = "1m"
     }
 }
 `

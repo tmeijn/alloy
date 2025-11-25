@@ -87,6 +87,7 @@ type StaticJob struct {
 	Dimensions           []Dimension `yaml:"dimensions"`
 	Metrics              []Metric    `yaml:"metrics"`
 	NilToZero            *bool       `yaml:"nil_to_zero,omitempty"`
+	Delay                time.Duration `yaml:"delay,omitempty"`
 }
 
 // InlineRegionAndRoles exposes for each supported job, the AWS regions and IAM roles in which the agent should perform the
@@ -206,12 +207,16 @@ func getServiceByAlias(alias string) string {
 
 func toYACEConfig(c *Config) (yaceModel.JobsConfig, bool, error) {
 	discoveryJobs := []*yaceConf.Job{}
+	discoveryDelays := []time.Duration{}
 	for _, job := range c.Discovery.Jobs {
 		discoveryJobs = append(discoveryJobs, toYACEDiscoveryJob(job))
+		discoveryDelays = append(discoveryDelays, job.Delay)
 	}
 	staticJobs := []*yaceConf.Static{}
+	staticDelays := []time.Duration{}
 	for _, stat := range c.Static {
 		staticJobs = append(staticJobs, toYACEStaticJob(stat))
+		staticDelays = append(staticDelays, stat.Delay)
 	}
 	conf := yaceConf.ScrapeConf{
 		APIVersion: "v1alpha1",
@@ -248,7 +253,7 @@ func toYACEStaticJob(job StaticJob) *yaceConf.Static {
 		Namespace:  job.Namespace,
 		CustomTags: toYACETags(job.CustomTags),
 		Dimensions: toYACEDimensions(job.Dimensions),
-		Metrics:    toYACEMetrics(job.Metrics, nilToZero),
+		Metrics:    toYACEMetrics(job.Metrics, nilToZero, job.Delay),
 	}
 }
 
@@ -274,7 +279,7 @@ func toYACEDiscoveryJob(job *DiscoveryJob) *yaceConf.Job {
 		Roles:                     roles,
 		CustomTags:                toYACETags(job.CustomTags),
 		Type:                      job.Type,
-		Metrics:                   toYACEMetrics(job.Metrics, nilToZero),
+		Metrics:                   toYACEMetrics(job.Metrics, nilToZero, job.Delay),
 		SearchTags:                toYACETags(job.SearchTags),
 		DimensionNameRequirements: job.DimensionNameRequirements,
 
@@ -288,7 +293,7 @@ func toYACEDiscoveryJob(job *DiscoveryJob) *yaceConf.Job {
 	return &yaceJob
 }
 
-func toYACEMetrics(metrics []Metric, jobNilToZero *bool) []*yaceConf.Metric {
+func toYACEMetrics(metrics []Metric, jobNilToZero *bool, jobDelay time.Duration) []*yaceConf.Metric {
 	yaceMetrics := []*yaceConf.Metric{}
 	for _, metric := range metrics {
 		periodSeconds := int64(metric.Period.Seconds())
