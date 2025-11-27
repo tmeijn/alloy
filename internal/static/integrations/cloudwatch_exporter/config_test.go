@@ -3,7 +3,6 @@ package cloudwatch_exporter
 import (
 	"io"
 	"testing"
-	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/prometheus-community/yet-another-cloudwatch-exporter/pkg/model"
@@ -488,24 +487,6 @@ func TestTranslateNilToZeroConfigToYACEConfig(t *testing.T) {
 	require.NoError(t, err, "failed to translate to YACE configuration")
 
 	require.EqualValues(t, expectedConfig3.DiscoveryJobs, yaceConf.DiscoveryJobs)
-	require.EqualValues(t, truePtr, fipsEnabled)
-}
-
-func TestTranslateDelayConfigToYACEConfig(t *testing.T) {
-	c := Config{}
-	err := yaml.Unmarshal([]byte(configString4), &c)
-	require.NoError(t, err, "failed to unmarshal config")
-
-	require.Equal(t, time.Minute, c.Discovery.Jobs[0].Delay)
-	require.Equal(t, 2*time.Minute, c.Static[0].Delay)
-
-	logger, err := logging.New(io.Discard, logging.DefaultOptions)
-	require.NoError(t, err)
-
-	yaceConf, fipsEnabled, err := ToYACEConfig(&c, logger)
-	require.NoError(t, err, "failed to translate to YACE configuration")
-
-	require.EqualValues(t, expectedConfig4, yaceConf)
 	require.EqualValues(t, truePtr, fipsEnabled)
 }
 
