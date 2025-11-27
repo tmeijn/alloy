@@ -168,7 +168,6 @@ static "super_ec2_instance_id" {
 }
 `
 
-
 const discoveryJobNilToZeroConfig = `
 sts_region = "us-east-2"
 debug = true

@@ -82,11 +82,11 @@ type DiscoveryJob struct {
 type StaticJob struct {
 	InlineRegionAndRoles `yaml:",inline"`
 	InlineCustomTags     `yaml:",inline"`
-	Name                 string      `yaml:"name"`
-	Namespace            string      `yaml:"namespace"`
-	Dimensions           []Dimension `yaml:"dimensions"`
-	Metrics              []Metric    `yaml:"metrics"`
-	NilToZero            *bool       `yaml:"nil_to_zero,omitempty"`
+	Name                 string        `yaml:"name"`
+	Namespace            string        `yaml:"namespace"`
+	Dimensions           []Dimension   `yaml:"dimensions"`
+	Metrics              []Metric      `yaml:"metrics"`
+	NilToZero            *bool         `yaml:"nil_to_zero,omitempty"`
 	Delay                time.Duration `yaml:"delay,omitempty"`
 }
 

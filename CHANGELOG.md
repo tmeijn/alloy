@@ -34,6 +34,10 @@ Main (unreleased)
   - `explain_plans`
     - always send an explain plan log message for each query, even skipped or errored queries. (@rgeyer)
 
+- Add `delay` option to `prometheus.exporter.cloudwatch` component to delay scraping of metrics to account for CloudWatch ingestion latency. (@tmeijn)
+
+- Export `yace_.*` metrics from the underlying YACE Exporter to `prometheus.exporter.cloudwatch`. (@tmeijn)
+
 ### Bugfixes
 
 - (_Public Preview_) Additions to `database_observability.postgres` component:
