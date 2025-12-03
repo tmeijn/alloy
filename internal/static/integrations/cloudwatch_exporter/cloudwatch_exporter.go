@@ -33,10 +33,11 @@ type exporter struct {
 	logger               *slog.Logger
 	cachingClientFactory cachingFactory
 	scrapeConf           yaceModel.JobsConfig
+	labelsToSnakeCase    bool
 }
 
 // NewCloudwatchExporter creates a new YACE wrapper, that implements Integration
-func NewCloudwatchExporter(name string, logger log.Logger, conf yaceModel.JobsConfig, fipsEnabled, debug bool, useAWSSDKVersionV2 bool) (*exporter, error) {
+func NewCloudwatchExporter(name string, logger log.Logger, conf yaceModel.JobsConfig, fipsEnabled, labelsToSnakeCase, debug, useAWSSDKVersionV2 bool) (*exporter, error) {
 	var factory cachingFactory
 	var err error
 
@@ -57,6 +58,7 @@ func NewCloudwatchExporter(name string, logger log.Logger, conf yaceModel.JobsCo
 		logger:               l,
 		cachingClientFactory: factory,
 		scrapeConf:           conf,
+		labelsToSnakeCase:    labelsToSnakeCase,
 	}, nil
 }
 
@@ -84,7 +86,7 @@ func (e *exporter) MetricsHandler() (http.Handler, error) {
 			reg,
 			e.cachingClientFactory,
 			yace.MetricsPerQuery(metricsPerQuery),
-			yace.LabelsSnakeCase(labelsSnakeCase),
+			yace.LabelsSnakeCase(e.labelsToSnakeCase),
 			yace.CloudWatchAPIConcurrency(cloudWatchConcurrency),
 			yace.TaggingAPIConcurrency(tagConcurrency),
 		)
