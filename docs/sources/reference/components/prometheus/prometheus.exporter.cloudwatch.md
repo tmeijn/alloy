@@ -203,6 +203,7 @@ You can configure the `discovery` block one or multiple times to scrape metrics 
 | `nil_to_zero`                 | `bool`         | When `true`, `NaN` metric values are converted to 0. Individual metrics can override this value in the [metric][] block.                                                                                                                               | `true`  | no       |
 | `recently_active_only`        | `bool`         | Only return metrics that have been active in the last 3 hours.                                                                                                                                                                                         | `false` | no       |
 | `search_tags`                 | `map(string)`  | List of key / value pairs to use for tag filtering (all must match). The value can be a regular expression.                                                                                                                                            | `{}`    | no       |
+| `add_cloudwatch_timestamp`    | `bool`         | When `true`, use the timestamp from CloudWatch instead of the scrape time.                                                                                                                                      | `false` | no       |
 
 [supported-services]: #supported-services-in-discovery-jobs
 
@@ -303,6 +304,7 @@ You can configure the `custom_namespace` block multiple times to scrape metrics 
 | `dimension_name_requirements` | `list(string)` | List of metric dimensions to query. Before querying metric values, the total list of metrics are filtered to only those that contain exactly this list of dimensions. An empty or undefined list results in all dimension combinations being included. | `{}`    | no       |
 | `nil_to_zero`                 | `bool`         | When `true`, `NaN` metric values are converted to 0. Individual metrics can override this value in the [metric][] block.                                                                                                                               | `true`  | no       |
 | `recently_active_only`        | `bool`         | Only return metrics that have been active in the last 3 hours.                                                                                                                                                                                         | `false` | no       |
+| `add_cloudwatch_timestamp`    | `bool`         | When `true`, use the timestamp from CloudWatch instead of the scrape time.                                                                                                                                      | `false` | no       |
 
 ### `metric`
 
