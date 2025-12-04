@@ -67,6 +67,7 @@ type DiscoveryJob struct {
 	Delay                     time.Duration  `alloy:"delay,attr,optional"`
 	AddCloudwatchTimestamp    *bool          `alloy:"add_cloudwatch_timestamp,attr,optional"`
 	NilToZero                 *bool          `alloy:"nil_to_zero,attr,optional"`
+	ExportAllDataPoints       *bool          `alloy:"export_all_data_points,attr,optional"`
 }
 
 // Tags represents a series of tags configured on an AWS resource. Each tag is a
@@ -105,6 +106,7 @@ type CustomNamespaceJob struct {
 	Length                    time.Duration  `alloy:"length,attr,optional"`
 	AddCloudwatchTimestamp    *bool          `alloy:"add_cloudwatch_timestamp,attr,optional"`
 	NilToZero                 *bool          `alloy:"nil_to_zero,attr,optional"`
+	ExportAllDataPoints       *bool          `alloy:"export_all_data_points,attr,optional"`
 }
 
 // RegionAndRoles exposes for each supported job, the AWS regions and IAM roles
@@ -130,6 +132,7 @@ type Metric struct {
 	Length                 time.Duration `alloy:"length,attr,optional"`
 	NilToZero              *bool         `alloy:"nil_to_zero,attr,optional"`
 	AddCloudwatchTimestamp *bool         `alloy:"add_cloudwatch_timestamp,attr,optional"`
+	ExportAllDataPoints    *bool         `alloy:"export_all_data_points,attr,optional"`
 }
 
 // SetToDefault implements syntax.Defaulter.
@@ -293,6 +296,7 @@ func toYACEMetrics(ms []Metric, jobPeriod time.Duration, jobLength time.Duration
 
 			NilToZero:              m.NilToZero,
 			AddCloudwatchTimestamp: m.AddCloudwatchTimestamp,
+			ExportAllDataPoints:    m.ExportAllDataPoints,
 		})
 	}
 	return yaceMetrics
@@ -350,6 +354,7 @@ func toYACEDiscoveryJob(rj DiscoveryJob) *yaceConf.Job {
 			Length:                 int64(rj.Length.Seconds()),
 			Delay:                  int64(rj.Delay.Seconds()),
 			NilToZero:              nilToZero,
+			ExportAllDataPoints: rj.ExportAllDataPoints,
 		},
 		Metrics: toYACEMetrics(rj.Metrics, rj.Period, rj.Length),
 	}
@@ -376,6 +381,7 @@ func toYACECustomNamespaceJob(cn CustomNamespaceJob) *yaceConf.CustomNamespace {
 			Length:                 int64(cn.Length.Seconds()),
 			Delay:                  int64(cn.Delay.Seconds()),
 			NilToZero:              nilToZero,
+			ExportAllDataPoints: cn.ExportAllDataPoints,
 		},
 		Metrics: toYACEMetrics(cn.Metrics, cn.Period, cn.Length),
 	}
