@@ -26,7 +26,7 @@ type asyncExporter struct {
 	cachingClientFactory cachingFactory
 	scrapeConf           yaceModel.JobsConfig
 	registry             atomic.Pointer[prometheus.Registry]
-	labelsToSnakeCase    bool
+	labelsSnakeCase    bool
 	// scrapeInterval is the frequency in which a background go-routine collects new AWS metrics via YACE.
 	scrapeInterval time.Duration
 }
@@ -34,7 +34,7 @@ type asyncExporter struct {
 // NewDecoupledCloudwatchExporter creates a new YACE wrapper, that implements Integration. The decouple feature spawns a
 // background go-routine to perform YACE metric collection allowing for a decoupled collection of AWS metrics from the
 // ServerHandler.
-func NewDecoupledCloudwatchExporter(name string, logger log.Logger, conf yaceModel.JobsConfig, scrapeInterval time.Duration, fipsEnabled, labelsToSnakeCase, debug, useAWSSDKVersionV2 bool) (*asyncExporter, error) {
+func NewDecoupledCloudwatchExporter(name string, logger log.Logger, conf yaceModel.JobsConfig, scrapeInterval time.Duration, fipsEnabled, labelsSnakeCase, debug, useAWSSDKVersionV2 bool) (*asyncExporter, error) {
 	var factory cachingFactory
 	var err error
 
@@ -54,7 +54,7 @@ func NewDecoupledCloudwatchExporter(name string, logger log.Logger, conf yaceMod
 		cachingClientFactory: factory,
 		scrapeConf:           conf,
 		registry:             atomic.Pointer[prometheus.Registry]{},
-		labelsToSnakeCase:    labelsToSnakeCase,
+		labelsSnakeCase:    labelsSnakeCase,
 		scrapeInterval:       scrapeInterval,
 	}, nil
 }
@@ -114,7 +114,7 @@ func (e *asyncExporter) scrape(ctx context.Context) {
 		reg,
 		e.cachingClientFactory,
 		yace.MetricsPerQuery(metricsPerQuery),
-		yace.LabelsSnakeCase(e.labelsToSnakeCase),
+		yace.LabelsSnakeCase(e.labelsSnakeCase),
 		yace.CloudWatchAPIConcurrency(cloudWatchConcurrency),
 		yace.TaggingAPIConcurrency(tagConcurrency),
 	)

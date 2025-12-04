@@ -26,7 +26,7 @@ var defaults = Arguments{
 		Enabled:        false,
 		ScrapeInterval: 5 * time.Minute,
 	},
-	LabelsToSnakeCase: false,
+	LabelsSnakeCase: false,
 	UseAWSSDKVersion2: false,
 }
 
@@ -40,7 +40,7 @@ type Arguments struct {
 	Static                []StaticJob           `alloy:"static,block,optional"`
 	CustomNamespace       []CustomNamespaceJob  `alloy:"custom_namespace,block,optional"`
 	DecoupledScrape       DecoupledScrapeConfig `alloy:"decoupled_scraping,block,optional"`
-	LabelsToSnakeCase     bool                  `alloy:"labels_to_snake_case,attr,optional"`
+	LabelsSnakeCase     bool                  `alloy:"labels_snake_case,attr,optional"`
 	UseAWSSDKVersion2     bool                  `alloy:"aws_sdk_version_v2,attr,optional"`
 }
 
